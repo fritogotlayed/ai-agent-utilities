@@ -1,9 +1,8 @@
 ###
-#Ignore some AI agent files / directories that may show up from testing
+#AI agent files / directories that may show up from testing
 ###
 
 # Generic
-AGENTS.md
 .opencode/
 
 # Anthropic
@@ -12,3 +11,13 @@ CLAUDE.md
 
 # oh-my-opencode
 .sisyphus/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+.env
