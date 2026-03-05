@@ -59,20 +59,29 @@ python3 aau_toolkit.py list
 
 ## Available Skills
 
-| Name | Type | Description |
-|------|------|-------------|
-| code-review | Knowledge | Systematic code review covering correctness, security, performance, maintainability, and style |
-| security-audit | Knowledge | OWASP-aware security analysis and vulnerability assessment |
-| documentation | Knowledge | Documentation generation methodology |
-| refactoring | Knowledge | Safe, behavior-preserving code refactoring process |
-| skill-builder | Knowledge | Meta-skill for creating new Agent Skills standard skills |
-| review | Action | Performs code review on specified target (files, staged changes, or diff) |
-| test | Action | Writes and runs tests following project conventions |
-| security | Action | Performs security analysis on specified target |
-| docs | Action | Generates or updates documentation |
-| new-skill | Action | Scaffolds new Agent Skills standard skills |
+### Knowledge Skills
 
-**Knowledge skills** load as background context, shaping how the agent thinks and approaches problems. **Action skills** are invoked directly with a trigger phrase or slash command.
+Loaded as background context — shape how the agent approaches problems.
+
+| Name | Description |
+|------|-------------|
+| code-review | Systematic code review covering correctness, security, performance, and maintainability |
+| documentation | Documentation generation methodology |
+| refactoring | Safe, behavior-preserving code refactoring process |
+| security-audit | OWASP-aware security analysis and vulnerability assessment |
+| skill-builder | Meta-skill for creating new Agent Skills standard skills |
+
+### Action Skills
+
+Invoked directly with a trigger phrase or `/command`. Action skills reference their knowledge counterpart for methodology.
+
+| Name | Uses | Description |
+|------|------|-------------|
+| review | code-review | Performs code review on specified target (files, staged changes, or diff) |
+| docs | documentation | Generates or updates documentation |
+| security | security-audit | Performs security analysis on specified target |
+| new-skill | skill-builder | Scaffolds new Agent Skills standard skills |
+| test | — | Writes and runs tests following project conventions |
 
 ## How It Works
 
