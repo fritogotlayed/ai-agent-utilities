@@ -1,0 +1,14 @@
+###
+#Ignore some AI agent files / directories that may show up from testing
+###
+
+# Generic
+AGENTS.md
+.opencode/
+
+# Anthropic
+CLAUDE.md
+.claude/
+
+# oh-my-opencode
+.sisyphus/
