@@ -1,4 +1,4 @@
-"""Comprehensive test suite for install.py — ai-agent-utilities installer core."""
+"""Comprehensive test suite for aau_toolkit.py — ai-agent-utilities installer core."""
 
 import os
 import subprocess
@@ -10,7 +10,7 @@ import pytest
 # Ensure repo root is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from install import (
+from aau_toolkit import (
     _BLOCK_BEGIN,
     _BLOCK_END,
     ensure_symlink,

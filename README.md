@@ -7,7 +7,7 @@ A collection of AI agent skills that can be bootstrapped into any repository, gi
 ```bash
 git clone https://github.com/your-org/ai-agent-utilities.git ~/ai-agent-utilities
 cd ~/ai-agent-utilities
-python3 install.py install /path/to/your/repo
+python3 aau_toolkit.py install /path/to/your/repo
 ```
 
 ## Prerequisites
@@ -22,19 +22,19 @@ python3 install.py install /path/to/your/repo
 
 ```bash
 # Install all skills
-python3 install.py install /path/to/repo
+python3 aau_toolkit.py install /path/to/repo
 
 # Install to multiple repositories at once
-python3 install.py install /path/to/repo1 /path/to/repo2
+python3 aau_toolkit.py install /path/to/repo1 /path/to/repo2
 
 # Install specific skills only
-python3 install.py install /path/to/repo --skills code-review,security-audit
+python3 aau_toolkit.py install /path/to/repo --skills code-review,security-audit
 ```
 
 ### Uninstall skills from a repository
 
 ```bash
-python3 install.py uninstall /path/to/repo
+python3 aau_toolkit.py uninstall /path/to/repo
 ```
 
 This removes all symlinks and cleans up the managed `.gitignore` block.
@@ -43,10 +43,10 @@ This removes all symlinks and cleans up the managed `.gitignore` block.
 
 ```bash
 # Scan and install interactively
-python3 install.py scan ~/projects
+python3 aau_toolkit.py scan ~/projects
 
 # Limit how deep to search
-python3 install.py scan ~/projects --max-depth 3
+python3 aau_toolkit.py scan ~/projects --max-depth 3
 ```
 
 The scan command finds git repositories under the given directory and prompts you to choose which ones to install into.
@@ -54,7 +54,7 @@ The scan command finds git repositories under the given directory and prompts yo
 ### List available skills
 
 ```bash
-python3 install.py list
+python3 aau_toolkit.py list
 ```
 
 ## Available Skills
@@ -78,7 +78,7 @@ python3 install.py list
 
 Skills are `SKILL.md` files following the [Agent Skills open standard](https://agentskills.io). Each skill lives in its own directory under `skills/`.
 
-When you run `install.py install`, the installer creates symlinks from the target repository's `.claude/skills/` directory back to this toolkit's `skills/` directory. Because they're symlinks, any update you pull into this toolkit (`git pull`) automatically propagates to every repository you've installed into. No re-running the installer needed.
+When you run `aau_toolkit.py install`, the installer creates symlinks from the target repository's `.claude/skills/` directory back to this toolkit's `skills/` directory. Because they're symlinks, any update you pull into this toolkit (`git pull`) automatically propagates to every repository you've installed into. No re-running the installer needed.
 
 The installer also adds per-symlink entries to the target repository's `.gitignore` inside a managed block, so the symlinks don't accidentally get committed.
 
@@ -95,7 +95,7 @@ Any tool that implements the Agent Skills standard will pick up these skills aut
 
 Use the `skill-builder` knowledge skill. Once installed, ask your agent to "create a skill" or "scaffold a new skill" and it will walk you through the SKILL.md format, required frontmatter fields, naming conventions, and provide a complete template.
 
-You can also run `install.py list` to see the `new-skill` action skill, which automates the scaffolding step.
+You can also run `aau_toolkit.py list` to see the `new-skill` action skill, which automates the scaffolding step.
 
 ## Known Limitations
 

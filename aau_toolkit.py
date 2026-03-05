@@ -456,7 +456,7 @@ def cmd_scan(args) -> None:
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        prog="install.py",
+        prog="aau_toolkit.py",
         description="AI Agent Utilities installer \u2014 symlink skills into repositories",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
