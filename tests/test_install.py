@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from aau_toolkit import (
     _BLOCK_BEGIN,
     _BLOCK_END,
+    _has_toolkit_skills,
     ensure_symlink,
     install_skills,
     manage_gitignore,
@@ -502,3 +503,61 @@ def test_scan_does_not_descend_into_repos(tmp_path):
 
     assert parent in repos
     assert nested not in repos
+
+
+# ── _has_toolkit_skills tests ─────────────────────────────────────────────────
+
+
+def test_has_toolkit_skills_with_installed(tmp_path):
+    """Repo with at least one toolkit symlink in .claude/skills/ returns True."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_init(repo)
+    skills_dir = repo / ".claude" / "skills"
+    skills_dir.mkdir(parents=True)
+    # Create a symlink pointing into TOOLKIT_DIR/skills/
+    (skills_dir / "code-review").symlink_to(TOOLKIT_DIR / "skills" / "code-review")
+    assert _has_toolkit_skills(TOOLKIT_DIR, repo) is True
+
+
+def test_has_toolkit_skills_no_claude_dir(tmp_path):
+    """Repo without .claude/ directory returns False."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_init(repo)
+    assert _has_toolkit_skills(TOOLKIT_DIR, repo) is False
+
+
+def test_has_toolkit_skills_empty_skills_dir(tmp_path):
+    """Repo with empty .claude/skills/ directory returns False."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_init(repo)
+    (repo / ".claude" / "skills").mkdir(parents=True)
+    assert _has_toolkit_skills(TOOLKIT_DIR, repo) is False
+
+
+def test_has_toolkit_skills_custom_only(tmp_path):
+    """Repo with only non-toolkit real directories in .claude/skills/ returns False."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_init(repo)
+    skills_dir = repo / ".claude" / "skills"
+    skills_dir.mkdir(parents=True)
+    # Real directory (not a symlink), not from toolkit
+    (skills_dir / "my-custom-skill").mkdir()
+    assert _has_toolkit_skills(TOOLKIT_DIR, repo) is False
+
+
+def test_has_toolkit_skills_mixed(tmp_path):
+    """Repo with both toolkit symlinks and custom dirs returns True."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git_init(repo)
+    skills_dir = repo / ".claude" / "skills"
+    skills_dir.mkdir(parents=True)
+    # Custom real directory
+    (skills_dir / "my-custom-skill").mkdir()
+    # Toolkit symlink
+    (skills_dir / "code-review").symlink_to(TOOLKIT_DIR / "skills" / "code-review")
+    assert _has_toolkit_skills(TOOLKIT_DIR, repo) is True

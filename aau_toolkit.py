@@ -72,6 +72,32 @@ def remove_symlink(dst: Path, expected_src_prefix: Path) -> bool:
     return False
 
 
+def _has_toolkit_skills(toolkit_dir: Path, repo_dir: Path) -> bool:
+    """Return True if repo_dir has at least one skill symlink pointing under toolkit_dir.
+
+    Args:
+        toolkit_dir: Path to the ai-agent-utilities toolkit directory.
+        repo_dir: Path to the repository to check.
+
+    Returns:
+        True if at least one item in repo_dir/.claude/skills/ is a symlink
+        pointing to a path under toolkit_dir. False otherwise.
+    """
+    skills_dir = repo_dir / ".claude" / "skills"
+    if not skills_dir.is_dir():
+        return False
+    for item in skills_dir.iterdir():
+        if not item.is_symlink():
+            continue
+        try:
+            target = item.resolve()
+            if str(target).startswith(str(toolkit_dir.resolve())):
+                return True
+        except (OSError, ValueError):
+            pass
+    return False
+
+
 def manage_gitignore(repo_dir: Path, entries: list[str], action: str) -> None:
     """Manage the MANAGED BY ai-agent-utilities block in .gitignore.
 
