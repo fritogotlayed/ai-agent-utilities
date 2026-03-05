@@ -366,8 +366,81 @@ def cmd_install(args) -> None:
 def cmd_uninstall(args) -> None:
     """Handle the 'uninstall' subcommand."""
     toolkit_dir = Path(__file__).resolve().parent
-    has_error = False
 
+    # Mutual exclusivity validation
+    if args.repos and args.scan:
+        print(f"{_RED}\u2717 Cannot use both repo paths and --scan{_RESET}")
+        sys.exit(1)
+    if not args.repos and not args.scan:
+        print(f"{_RED}\u2717 Provide repo paths or use --scan DIRECTORY{_RESET}")
+        sys.exit(1)
+
+    # Scan branch
+    if args.scan:
+        root = Path(args.scan).resolve()
+        if not root.is_dir():
+            print(f"{_RED}\u2717 Directory not found: {args.scan}{_RESET}")
+            sys.exit(1)
+
+        repos = scan_for_repos(root, args.max_depth)
+        if not repos:
+            print("No git repositories found.")
+            return
+
+        repos = [r for r in repos if _has_toolkit_skills(toolkit_dir, r)]
+        if not repos:
+            print("No repositories with toolkit skills found.")
+            return
+
+        print(f"\nFound {len(repos)} repositories with toolkit skills:")
+        for i, repo in enumerate(repos, 1):
+            print(f"  [{i}] {repo}")
+
+        print(
+            "\nSelect repos to uninstall from (comma-separated numbers, 'all', or 'q' to cancel): ",
+            end="",
+            flush=True,
+        )
+        try:
+            choice = input().strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nCancelled.")
+            return
+
+        if not choice or choice.lower() == "q":
+            print("Cancelled.")
+            return
+
+        if choice.lower() == "all":
+            selected = repos
+        else:
+            try:
+                indices = [int(x.strip()) for x in choice.split(",")]
+                selected = [repos[i - 1] for i in indices if 1 <= i <= len(repos)]
+            except (ValueError, IndexError):
+                print(f"{_RED}\u2717 Invalid selection{_RESET}")
+                sys.exit(1)
+
+        if not selected:
+            print("No valid repos selected.")
+            return
+
+        has_error = False
+        for repo in selected:
+            result = uninstall_skills(toolkit_dir, repo)
+
+            print(f"\n{_BOLD}Uninstalling from {repo}{_RESET}")
+            for name in result["removed"]:
+                print(f"  {_GREEN}\u2713 {name} \u2014 removed{_RESET}")
+            for name in result["skipped"]:
+                print(f"  {_DIM}\u2022 {name} \u2014 skipped{_RESET}")
+
+            print(f"  {len(result['removed'])} skill(s) removed")
+
+        sys.exit(1 if has_error else 0)
+
+    # Direct repos path (UNCHANGED from original)
+    has_error = False
     for repo in args.repos:
         repo = Path(repo).resolve()
         if not repo.is_dir():
@@ -529,7 +602,15 @@ def main() -> None:
     p_uninstall = subparsers.add_parser(
         "uninstall", help="Uninstall skills from repositories"
     )
-    p_uninstall.add_argument("repos", nargs="+", type=Path, help="Repository paths")
+    p_uninstall.add_argument("repos", nargs="*", type=Path, default=[], help="Repository paths")
+    p_uninstall.add_argument(
+        "--scan",
+        metavar="DIRECTORY",
+        help="Scan directory for repos with toolkit skills and uninstall interactively",
+    )
+    p_uninstall.add_argument(
+        "--max-depth", type=int, default=5, help="Maximum scan depth (default: 5)"
+    )
     p_uninstall.set_defaults(func=cmd_uninstall)
 
     # list

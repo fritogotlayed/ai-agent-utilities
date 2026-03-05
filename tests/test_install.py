@@ -561,3 +561,55 @@ def test_has_toolkit_skills_mixed(tmp_path):
     # Toolkit symlink
     (skills_dir / "code-review").symlink_to(TOOLKIT_DIR / "skills" / "code-review")
     assert _has_toolkit_skills(TOOLKIT_DIR, repo) is True
+
+
+# ── uninstall --scan integration tests ────────────────────────────────────────────
+
+
+def test_uninstall_scan_filters_repos(tmp_path):
+    """scan + filter shows only repos with toolkit skills installed."""
+    # Create 3 git repos
+    repo_a = tmp_path / "repo_a"
+    repo_b = tmp_path / "repo_b"
+    repo_c = tmp_path / "repo_c"
+    for repo in (repo_a, repo_b, repo_c):
+        repo.mkdir()
+        _git_init(repo)
+
+    # Install toolkit skills in repo_a and repo_b only
+    for repo in (repo_a, repo_b):
+        skills_dir = repo / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+        (skills_dir / "code-review").symlink_to(TOOLKIT_DIR / "skills" / "code-review")
+
+    # Scan and filter
+    repos = scan_for_repos(tmp_path, max_depth=2)
+    filtered = [r for r in repos if _has_toolkit_skills(TOOLKIT_DIR, r)]
+
+    assert len(filtered) == 2
+    assert repo_a in filtered
+    assert repo_b in filtered
+    assert repo_c not in filtered
+
+
+def test_uninstall_scan_no_git_repos(tmp_path):
+    """Scanning directory with no git repos returns empty list."""
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    repos = scan_for_repos(empty_dir, max_depth=3)
+    assert repos == []
+
+
+def test_uninstall_scan_no_toolkit_repos(tmp_path):
+    """Scanning directory where repos have no toolkit skills returns empty after filter."""
+    # Create 2 git repos without toolkit skills
+    for name in ("repo_x", "repo_y"):
+        r = tmp_path / name
+        r.mkdir()
+        _git_init(r)
+
+    repos = scan_for_repos(tmp_path, max_depth=2)
+    assert len(repos) == 2  # both repos found
+
+    filtered = [r for r in repos if _has_toolkit_skills(TOOLKIT_DIR, r)]
+    assert filtered == []  # none have toolkit skills
