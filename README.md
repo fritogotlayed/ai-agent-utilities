@@ -35,9 +35,15 @@ python3 aau_toolkit.py install /path/to/repo --skills code-review,security-audit
 
 ```bash
 python3 aau_toolkit.py uninstall /path/to/repo
+
+# Scan for repos with skills and uninstall interactively
+python3 aau_toolkit.py uninstall --scan ~/projects
+
+# Limit scan depth
+python3 aau_toolkit.py uninstall --scan ~/projects --max-depth 3
 ```
 
-This removes all symlinks and cleans up the managed `.gitignore` block.
+This removes all symlinks and cleans up the managed `.gitignore` block. Use `--scan` to discover repositories with skills installed and choose which to uninstall.
 
 ### Scan a directory for repositories
 
