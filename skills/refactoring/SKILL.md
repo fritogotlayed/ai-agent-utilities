@@ -1,8 +1,10 @@
 ---
 name: refactoring
 description: |
+  Knowledge skill providing safe, behavior-preserving code refactoring methodology using incremental steps
+  and LSP tools. Loaded as background context. No paired action skill — invoked directly via trigger phrases.
   Trigger phrases: "refactor", "restructure", "clean up code", "reduce complexity", "code smells", "improve structure".
-  Guides safe, behavior-preserving code refactoring using incremental steps and LSP tools.
+type: knowledge
 license: MIT
 metadata:
   version: "1.0"

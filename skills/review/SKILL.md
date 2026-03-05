@@ -1,8 +1,10 @@
 ---
 name: review
 description: |
+  Action skill that performs code review on a specified target (files, staged changes, or diff).
+  Uses the 'code-review' knowledge skill for review methodology.
   Trigger phrases: "/review", "review this file", "review these changes", "review my PR", "review my code".
-  Action skill: performs code review on specified target (files, staged changes, or diff).
+type: action
 license: MIT
 compatibility: claude-3-5-sonnet, claude-3-opus
 metadata:

@@ -1,8 +1,10 @@
 ---
 name: new-skill
 description: |
+  Action skill that scaffolds a new Agent Skills standard skill in the current project.
+  Uses the 'skill-builder' knowledge skill for spec reference and templates.
   Trigger phrases: "/new-skill", "scaffold a new skill", "create new skill file", "create a skill".
-  Action skill: interactively creates a new Agent Skills standard skill in the current project.
+type: action
 metadata:
   version: "1.0"
   author: ai-agent-utilities

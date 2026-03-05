@@ -1,11 +1,11 @@
 ---
 name: security-audit
 description: |
-  Performs OWASP-aware security analysis and vulnerability assessment.
-  
-  Trigger phrases: "security audit", "check for vulnerabilities", "security review", "OWASP", "find security issues", "vulnerability scan", "security assessment", "penetration test", "threat analysis".
-  
-  Analyzes code and configurations for injection attacks, authentication/authorization flaws, secrets exposure, dependency vulnerabilities, data exposure risks, and insecure configurations. Returns severity-ranked findings (critical/high/medium/low) with CWE references.
+  Knowledge skill providing comprehensive OWASP-aware security audit methodology with CWE references. Covers
+  injection attacks, authentication flaws, secrets exposure, dependency vulnerabilities, and insecure
+  configurations. Loaded as background context. Paired with the 'security' action skill.
+  Trigger phrases: "security audit", "check for vulnerabilities", "security review", "OWASP", "find security issues".
+type: knowledge
 metadata:
   version: "1.0"
   author: ai-agent-utilities

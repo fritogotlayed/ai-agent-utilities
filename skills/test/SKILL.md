@@ -1,8 +1,10 @@
 ---
 name: test
 description: |
-  Trigger phrases: "/test", "write tests", "add tests", "test this", "improve test coverage", "write unit tests".
-  Action skill: writes tests for specified code, following the project's existing test patterns and conventions.
+  Action skill that writes tests for specified code, following the project's existing test patterns and
+  conventions. Covers happy paths, edge cases, error conditions, and boundary values. No paired knowledge skill.
+  Trigger phrases: "/test", "write tests", "add tests", "test this", "improve test coverage".
+type: action
 metadata:
   version: "1.0"
   author: ai-agent-utilities

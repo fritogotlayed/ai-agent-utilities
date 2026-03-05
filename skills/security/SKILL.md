@@ -1,9 +1,11 @@
 ---
 name: security
 description: |
-  Trigger phrases: "/security", "check security", "security scan", "is this secure", "security check".
-  Action skill: performs security analysis on specified target (files, project, or staged changes).
+  Action skill that performs security analysis on a specified target (files, project, or staged changes).
   Identifies vulnerabilities, hardcoded secrets, injection risks, and unsafe patterns.
+  Uses the 'security-audit' knowledge skill for OWASP methodology.
+  Trigger phrases: "/security", "check security", "security scan", "is this secure", "security check".
+type: action
 license: MIT
 compatibility: all
 metadata:

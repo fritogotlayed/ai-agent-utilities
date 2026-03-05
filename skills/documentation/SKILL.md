@@ -1,8 +1,10 @@
 ---
 name: documentation
 description: |
-  Trigger phrases: "write docs", "generate documentation", "update README", "API docs", "document this", "write documentation".
-  Guides documentation creation for codebases — README, API docs, architecture docs, and inline comments.
+  Knowledge skill providing documentation methodology — style matching, structure, and best practices for README,
+  API docs, architecture docs, and inline comments. Loaded as background context. Paired with the 'docs' action skill.
+  Trigger phrases: "write docs", "generate documentation", "update README", "API docs", "document this".
+type: knowledge
 metadata:
   version: "1.0"
   author: ai-agent-utilities

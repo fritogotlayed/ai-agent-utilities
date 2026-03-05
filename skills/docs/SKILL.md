@@ -1,8 +1,10 @@
 ---
 name: docs
 description: |
+  Action skill that generates or updates documentation for a specified target (file, module, or project).
+  Uses the 'documentation' knowledge skill for methodology and style guidance.
   Trigger phrases: "/docs", "generate docs", "update documentation", "document this module", "write documentation".
-  Action skill: generates or updates documentation for specified target (file, module, or entire project).
+type: action
 metadata:
   version: "1.0"
   author: ai-agent-utilities

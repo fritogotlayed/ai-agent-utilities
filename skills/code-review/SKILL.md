@@ -1,8 +1,10 @@
 ---
 name: code-review
 description: |
+  Knowledge skill providing systematic code review methodology across five dimensions: correctness, security,
+  performance, maintainability, and style. Loaded as background context. Paired with the 'review' action skill.
   Trigger phrases: "review my code", "code review", "check code quality", "find bugs", "review these changes".
-  Performs systematic code review covering security, performance, maintainability, and correctness.
+type: knowledge
 metadata:
   version: "1.0"
   author: ai-agent-utilities

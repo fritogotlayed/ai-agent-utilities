@@ -1,9 +1,10 @@
 ---
 name: skill-builder
 description: |
-  Meta-skill for creating Agent Skills standard skills. Explains the SKILL.md format, allowed frontmatter fields, naming conventions, and provides complete templates.
-  
-  Trigger phrases: "create a skill", "new skill", "build a skill", "scaffold skill", "SKILL.md template", "Agent Skills specification"
+  Knowledge skill (meta-skill) that teaches the Agent Skills standard: SKILL.md format, frontmatter fields,
+  naming conventions, and templates. Loaded as background context. Paired with the 'new-skill' action skill.
+  Trigger phrases: "create a skill", "new skill", "build a skill", "scaffold skill", "SKILL.md template".
+type: knowledge
 license: MIT
 metadata:
   version: "1.0"
@@ -39,7 +40,7 @@ The skill documentation and implementation details below the frontmatter.
 
 ## Allowed Top-Level Frontmatter Fields
 
-Only **6 fields** are allowed at the top level of the YAML frontmatter:
+Only **7 fields** are allowed at the top level of the YAML frontmatter:
 
 ### `name` (Required)
 - **Type**: string
@@ -52,6 +53,13 @@ Only **6 fields** are allowed at the top level of the YAML frontmatter:
 - **Content**: Brief purpose statement + trigger phrases/conditions
 - **Purpose**: Helps AI agents understand when to invoke this skill
 - **Example**: Include phrases like "create a skill", "new skill", "build a skill"
+
+### `type` (Optional)
+- **Type**: string
+- **Values**: `knowledge` or `action`
+- **Purpose**: Distinguish passive context skills from invocable action skills
+- **Details**: Knowledge skills load as background context shaping how the agent thinks. Action skills are invoked directly via trigger phrases or slash commands.
+- **Example**: `type: action`
 
 ### `license` (Optional)
 - **Type**: string
@@ -103,7 +111,7 @@ metadata:
 ---
 ```
 
-This is a common mistake because many YAML-based formats use top-level `version`. Agent Skills reserves the top level for the 6 defined fields only.
+This is a common mistake because many YAML-based formats use top-level `version`. Agent Skills reserves the top level for the 7 defined fields only.
 
 ## Naming Conventions
 
@@ -123,6 +131,7 @@ description: |
   Brief description of what this skill does.
   
   Trigger phrases: "phrase one", "phrase two", "phrase three"
+type: knowledge  # or: action
 license: MIT
 metadata:
   version: "1.0"
