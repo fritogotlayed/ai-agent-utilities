@@ -21,3 +21,4 @@ dist/
 build/
 .venv/
 .env
+.ruff_cache/

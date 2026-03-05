@@ -339,7 +339,7 @@ def test_uninstall_removes_toolkit_only(tmp_path):
 
     result = uninstall_skills(TOOLKIT_DIR, repo)
 
-    assert len(result["removed"]) == 10
+    assert len(result["removed"]) == 11  # 10 skills + README.md
     assert "my-custom-skill" in result["skipped"]
     # Custom skill preserved
     assert custom_skill.is_dir()

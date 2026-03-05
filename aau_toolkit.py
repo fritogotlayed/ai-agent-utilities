@@ -160,6 +160,15 @@ def install_skills(
         result[status].append(skill_dir.name)
         gitignore_entries.append(f".claude/skills/{skill_dir.name}")
 
+    # Symlink skills README for human reference
+    readme_src = skills_dir / "README.md"
+    if readme_src.exists():
+        readme_target = target_base / "README.md"
+        try:
+            ensure_symlink(readme_src.resolve(), readme_target)
+        except FileExistsError:
+            pass  # skip if real README exists at target
+        gitignore_entries.append(".claude/skills/README.md")
     # Phase 3: update .gitignore
     if gitignore_entries:
         existing_entries = _get_managed_entries(repo_dir)
@@ -362,33 +371,51 @@ def cmd_list(args) -> None:
         print("No skills directory found.")
         sys.exit(1)
 
-    skills: list[tuple[str, str]] = []
+    knowledge: list[tuple[str, str]] = []
+    action: list[tuple[str, str]] = []
     for skill_dir in sorted(skills_dir.iterdir()):
         skill_md = skill_dir / "SKILL.md"
         if skill_dir.is_dir() and skill_md.exists():
             fm = _parse_frontmatter(skill_md.read_text())
             name = fm.get("name", skill_dir.name)
             desc = fm.get("description", "")
-            skills.append((name, desc))
+            skill_type = fm.get("type", "knowledge")
+            if skill_type == "action":
+                action.append((name, desc))
+            else:
+                knowledge.append((name, desc))
 
-    if not skills:
+    all_skills = knowledge + action
+    if not all_skills:
         print("No skills found.")
         sys.exit(0)
 
-    name_width = max(len(s[0]) for s in skills)
+    name_width = max(len(s[0]) for s in all_skills)
     name_width = max(name_width, 4)  # minimum for "Name" header
 
     dash = "\u2500"
-    print(f"\n{_BOLD}Available Skills{_RESET}\n")
-    print(f"  {'Name':<{name_width}}  Description")
-    print(f"  {dash * name_width}  {dash * 60}")
-    for name, desc in skills:
-        if len(desc) > 80:
-            desc = desc[:77] + "..."
-        print(f"  {name:<{name_width}}  {desc}")
-    print(f"\n  {len(skills)} skill(s) available")
-    sys.exit(0)
 
+    if knowledge:
+        print(f"\n{_BOLD}Knowledge Skills{_RESET} {_DIM}\u2014 loaded as context, shape how the agent thinks{_RESET}\n")
+        print(f"  {'Name':<{name_width}}  Description")
+        print(f"  {dash * name_width}  {dash * 60}")
+        for name, desc in knowledge:
+            if len(desc) > 80:
+                desc = desc[:77] + "..."
+            print(f"  {name:<{name_width}}  {desc}")
+
+    if action:
+        print(f"\n{_BOLD}Action Skills{_RESET} {_DIM}\u2014 invoked via /command or trigger phrase{_RESET}\n")
+        print(f"  {'Name':<{name_width}}  Description")
+        print(f"  {dash * name_width}  {dash * 60}")
+        for name, desc in action:
+            if len(desc) > 80:
+                desc = desc[:77] + "..."
+            print(f"  {name:<{name_width}}  {desc}")
+
+    total = len(knowledge) + len(action)
+    print(f"\n  {total} skill(s) available \u2014 {len(knowledge)} knowledge, {len(action)} action")
+    sys.exit(0)
 
 def cmd_scan(args) -> None:
     """Handle the 'scan' subcommand — discover repos and install interactively."""
