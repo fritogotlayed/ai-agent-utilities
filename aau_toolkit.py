@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """ai-agent-utilities installer core module.
 
 Functions:
@@ -376,9 +378,10 @@ def cmd_list(args) -> None:
     name_width = max(len(s[0]) for s in skills)
     name_width = max(name_width, 4)  # minimum for "Name" header
 
+    dash = "\u2500"
     print(f"\n{_BOLD}Available Skills{_RESET}\n")
     print(f"  {'Name':<{name_width}}  Description")
-    print(f"  {'\u2500' * name_width}  {'\u2500' * 60}")
+    print(f"  {dash * name_width}  {dash * 60}")
     for name, desc in skills:
         if len(desc) > 80:
             desc = desc[:77] + "..."

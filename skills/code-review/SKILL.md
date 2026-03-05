@@ -2,7 +2,7 @@
 name: code-review
 description: |
   Trigger phrases: "review my code", "code review", "check code quality", "find bugs", "review these changes".
-  Performs systematic code review covering security, performance, maintainability, style, and correctness.
+  Performs systematic code review covering security, performance, maintainability, and correctness.
 metadata:
   version: "1.0"
   author: ai-agent-utilities
@@ -10,7 +10,7 @@ metadata:
 
 # Code Review
 
-A systematic code review skill that examines code across six critical dimensions to identify issues, security vulnerabilities, performance problems, and maintainability concerns.
+A systematic code review skill that examines code across five critical dimensions to identify issues, security vulnerabilities, performance problems, and maintainability concerns.
 
 ## Review Methodology
 
@@ -60,16 +60,8 @@ Assess code clarity, organization, and long-term sustainability:
 - Verify appropriate abstraction levels
 - Check for proper separation of concerns
 - Identify technical debt and code smells
-
-### 6. Check Style
-Ensure consistency with project conventions and standards:
-- Verify adherence to project coding conventions
-- Check formatting and indentation consistency
-- Validate naming conventions (camelCase, snake_case, PascalCase)
 - Ensure consistent use of language idioms
-- Check for proper documentation and comments
-- Verify consistent error handling patterns
-- Ensure consistent code organization
+- Check for proper documentation and comment quality
 
 ## Output Format
 
@@ -83,7 +75,7 @@ Present findings in a structured format:
 **Severity Levels:**
 - **critical** — Security vulnerability, data loss risk, or runtime crash
 - **warning** — Logic error, performance issue, or maintainability concern
-- **info** — Style inconsistency, minor improvement, or best practice suggestion
+- **info** — Minor improvement or best practice suggestion
 
 ## Review Summary
 
