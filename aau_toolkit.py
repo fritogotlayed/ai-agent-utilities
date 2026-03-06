@@ -98,6 +98,206 @@ def _has_toolkit_skills(toolkit_dir: Path, repo_dir: Path) -> bool:
     return False
 
 
+def _count_toolkit_skills(toolkit_dir: Path, repo_dir: Path) -> int:
+    """Return the count of skill symlinks in repo_dir pointing under toolkit_dir.
+
+    Args:
+        toolkit_dir: Path to the ai-agent-utilities toolkit directory.
+        repo_dir: Path to the repository to check.
+
+    Returns:
+        Count of items in repo_dir/.claude/skills/ that are symlinks pointing
+        to a path under toolkit_dir. Returns 0 if directory does not exist.
+    """
+    skills_dir = repo_dir / ".claude" / "skills"
+    if not skills_dir.is_dir():
+        return 0
+    count = 0
+    for item in skills_dir.iterdir():
+        if not item.is_symlink():
+            continue
+        try:
+            target = item.resolve()
+            if str(target).startswith(str(toolkit_dir.resolve())):
+                count += 1
+        except (OSError, ValueError):
+            pass
+    return count
+
+
+def _format_repo_list(repos: list[Path], root: Path, toolkit_dir: Path) -> list[str]:
+    """Format repos as a numbered list with relative paths and skill-count annotations.
+
+    Args:
+        repos: List of repository paths.
+        root: The scan root directory (for computing relative paths).
+        toolkit_dir: Toolkit directory (for counting installed skills).
+
+    Returns:
+        List of formatted strings, one per repo, 1-indexed.
+    """
+    lines = []
+    for i, repo in enumerate(repos, 1):
+        try:
+            rel = str(repo.relative_to(root))
+        except ValueError:
+            rel = str(repo)
+        count = _count_toolkit_skills(toolkit_dir, repo)
+        if count > 0:
+            noun = "skill" if count == 1 else "skills"
+            lines.append(f"  [{i}] {_GREEN}\u2713{_RESET} ({count} {noun}) {rel}")
+        else:
+            lines.append(f"  [{i}]   {rel}")
+    return lines
+
+
+def parse_selection(choice: str, max_index: int) -> list[int]:
+    """Parse a selection string into a sorted list of 1-based indices.
+
+    Args:
+        choice: A selection string such as "1,3-5,9,22-34". Commas separate
+            tokens; each token is either a single integer or a range "N-M".
+            Empty tokens (from trailing/leading/double commas or whitespace-
+            only tokens) are silently discarded.
+        max_index: The maximum valid 1-based index.
+
+    Returns:
+        Sorted, deduplicated list of 1-based integer indices.
+
+    Raises:
+        ValueError: On reversed ranges, out-of-bounds indices, or non-numeric
+            tokens. Empty tokens are silently discarded, not errors.
+    """
+    result: set[int] = set()
+    for part in choice.split(","):
+        part = part.strip()
+        if not part:
+            continue  # silently discard empty tokens
+        if "-" in part:
+            # Treat as range; guard against leading hyphen (negative numbers)
+            if part.startswith("-"):
+                raise ValueError(f"Invalid selection: '{part}'")
+            left_str, _, right_str = part.partition("-")
+            if not right_str:
+                raise ValueError(f"Invalid range: '{part}'")
+            try:
+                left = int(left_str)
+                right = int(right_str)
+            except ValueError:
+                raise ValueError(f"Invalid range: '{part}'")
+            if left > right:
+                raise ValueError(
+                    f"Invalid range {left}-{right} (start must be \u2264 end)"
+                )
+            if left < 1:
+                raise ValueError(
+                    f"Index {left} is out of range (use 1\u2013{max_index})"
+                )
+            if right > max_index:
+                raise ValueError(f"Index {right} is out of range (max: {max_index})")
+            result.update(range(left, right + 1))
+        else:
+            try:
+                n = int(part)
+            except ValueError:
+                raise ValueError(f"Invalid selection: '{part}'")
+            if n < 1:
+                raise ValueError(f"Index {n} is out of range (use 1\u2013{max_index})")
+            if n > max_index:
+                raise ValueError(f"Index {n} is out of range (max: {max_index})")
+            result.add(n)
+    return sorted(result)
+
+
+def _select_repos_tui(
+    repos: list[Path],
+    root: Path,
+    toolkit_dir: Path,
+    prompt: str,
+) -> list[Path] | None:
+    """Interactively select repos using a TUI if available, or a numbered list fallback.
+
+    Uses simple-term-menu when installed and a TTY is present; otherwise falls
+    back to a printed numbered list with range-aware selection.
+
+    Args:
+        repos: List of candidate repository paths.
+        root: Scan root directory (used for relative path display).
+        toolkit_dir: Toolkit directory (used for skill-count annotations).
+        prompt: Action description shown to the user (e.g. "Select repos to install into").
+
+    Returns:
+        List of selected Path objects, empty list if none selected, or None if cancelled.
+    """
+    # Build display labels used by both TUI and fallback
+    labels: list[str] = []
+    for repo in repos:
+        try:
+            rel = str(repo.relative_to(root))
+        except ValueError:
+            rel = str(repo)
+        count = _count_toolkit_skills(toolkit_dir, repo)
+        if count > 0:
+            noun = "skill" if count == 1 else "skills"
+            labels.append(f"\u2713 ({count} {noun}) {rel}")
+        else:
+            labels.append(f"  {rel}")
+
+    # Try TUI path
+    _tui_available = False
+    try:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            from simple_term_menu import TerminalMenu  # noqa: PLC0415
+
+            _tui_available = True
+    except ImportError:
+        pass
+
+    if _tui_available:
+        menu = TerminalMenu(
+            labels,
+            title=f"\n{prompt}\n(SPACE to select, ENTER to confirm, / to search, q to cancel)\n",
+            multi_select=True,
+            show_multi_select_hint=False,
+            search_key="/",
+        )
+        indices = menu.show()
+        if indices is None:
+            return None  # user cancelled with q/Escape
+        return [repos[i] for i in indices]
+
+    # Fallback: improved numbered list + range parser
+    noun = "repository" if len(repos) == 1 else "repositories"
+    print(f"\nFound {len(repos)} {noun}:")
+    for line in _format_repo_list(repos, root, toolkit_dir):
+        print(line)
+    print(
+        f"\n{prompt} (e.g. 1,3-5,9 \u2014 ranges supported), 'all', or 'q' to cancel: ",
+        end="",
+        flush=True,
+    )
+    try:
+        choice = input().strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\nCancelled.")
+        return None
+
+    if not choice or choice.lower() == "q":
+        return None
+    if choice.lower() == "all":
+        return list(repos)
+
+    try:
+        indices = parse_selection(choice, len(repos))
+    except ValueError as exc:
+        print(f"{_RED}\u2717 {exc}{_RESET}")
+        sys.exit(1)
+
+    if not indices:
+        return []
+    return [repos[i - 1] for i in indices]
+
+
 def manage_gitignore(repo_dir: Path, entries: list[str], action: str) -> None:
     """Manage the MANAGED BY ai-agent-utilities block in .gitignore.
 
@@ -245,9 +445,17 @@ def _get_managed_entries(repo_dir: Path) -> list[str]:
         return []
     return [line for line in m.group(1).splitlines() if line.strip()]
 
+
 _PRUNE_DIRS = {
-    "node_modules", ".git", ".cache", "vendor",
-    ".venv", "venv", "__pycache__", "dist", "build",
+    "node_modules",
+    ".git",
+    ".cache",
+    "vendor",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "dist",
+    "build",
 }
 
 
@@ -291,6 +499,7 @@ def scan_for_repos(root_dir: Path, max_depth: int = 5) -> list[Path]:
                 continue
 
     return sorted(repos)
+
 
 # ── ANSI colour helpers (stdlib only) ──────────────────────────────────────
 _GREEN = "\033[32m"
@@ -357,7 +566,9 @@ def cmd_install(args) -> None:
             has_error = True
 
         if not result["conflicts"]:
-            ok = len(result["created"]) + len(result["replaced"]) + len(result["exists"])
+            ok = (
+                len(result["created"]) + len(result["replaced"]) + len(result["exists"])
+            )
             print(f"  {ok} skill(s) ready")
 
     sys.exit(1 if has_error else 0)
@@ -392,35 +603,12 @@ def cmd_uninstall(args) -> None:
             print("No repositories with toolkit skills found.")
             return
 
-        print(f"\nFound {len(repos)} repositories with toolkit skills:")
-        for i, repo in enumerate(repos, 1):
-            print(f"  [{i}] {repo}")
-
-        print(
-            "\nSelect repos to uninstall from (comma-separated numbers, 'all', or 'q' to cancel): ",
-            end="",
-            flush=True,
+        selected = _select_repos_tui(
+            repos, root, toolkit_dir, "Select repos to uninstall from"
         )
-        try:
-            choice = input().strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nCancelled.")
-            return
-
-        if not choice or choice.lower() == "q":
+        if selected is None:
             print("Cancelled.")
             return
-
-        if choice.lower() == "all":
-            selected = repos
-        else:
-            try:
-                indices = [int(x.strip()) for x in choice.split(",")]
-                selected = [repos[i - 1] for i in indices if 1 <= i <= len(repos)]
-            except (ValueError, IndexError):
-                print(f"{_RED}\u2717 Invalid selection{_RESET}")
-                sys.exit(1)
-
         if not selected:
             print("No valid repos selected.")
             return
@@ -495,7 +683,9 @@ def cmd_list(args) -> None:
     dash = "\u2500"
 
     if knowledge:
-        print(f"\n{_BOLD}Knowledge Skills{_RESET} {_DIM}\u2014 loaded as context, shape how the agent thinks{_RESET}\n")
+        print(
+            f"\n{_BOLD}Knowledge Skills{_RESET} {_DIM}\u2014 loaded as context, shape how the agent thinks{_RESET}\n"
+        )
         print(f"  {'Name':<{name_width}}  Description")
         print(f"  {dash * name_width}  {dash * 60}")
         for name, desc in knowledge:
@@ -504,7 +694,9 @@ def cmd_list(args) -> None:
             print(f"  {name:<{name_width}}  {desc}")
 
     if action:
-        print(f"\n{_BOLD}Action Skills{_RESET} {_DIM}\u2014 invoked via /command or trigger phrase{_RESET}\n")
+        print(
+            f"\n{_BOLD}Action Skills{_RESET} {_DIM}\u2014 invoked via /command or trigger phrase{_RESET}\n"
+        )
         print(f"  {'Name':<{name_width}}  Description")
         print(f"  {dash * name_width}  {dash * 60}")
         for name, desc in action:
@@ -513,11 +705,14 @@ def cmd_list(args) -> None:
             print(f"  {name:<{name_width}}  {desc}")
 
     total = len(knowledge) + len(action)
-    print(f"\n  {total} skill(s) available \u2014 {len(knowledge)} knowledge, {len(action)} action")
+    print(
+        f"\n  {total} skill(s) available \u2014 {len(knowledge)} knowledge, {len(action)} action"
+    )
     sys.exit(0)
 
+
 def cmd_scan(args) -> None:
-    """Handle the 'scan' subcommand — discover repos and install interactively."""
+    """Handle the 'scan' subcommand \u2014 discover repos and install interactively."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"{_RED}\u2717 Directory not found: {args.directory}{_RESET}")
@@ -528,41 +723,18 @@ def cmd_scan(args) -> None:
         print("No git repositories found.")
         return
 
-    print(f"\nFound {len(repos)} git repositories:")
-    for i, repo in enumerate(repos, 1):
-        print(f"  [{i}] {repo}")
+    toolkit_dir = Path(__file__).resolve().parent
+    skill_names = [s.strip() for s in args.skills.split(",")] if args.skills else None
 
-    print(
-        "\nSelect repos to install (comma-separated numbers, 'all', or 'q' to cancel): ",
-        end="",
-        flush=True,
+    selected = _select_repos_tui(
+        repos, root, toolkit_dir, "Select repos to install into"
     )
-    try:
-        choice = input().strip()
-    except (EOFError, KeyboardInterrupt):
-        print("\nCancelled.")
-        return
-
-    if not choice or choice.lower() == "q":
+    if selected is None:
         print("Cancelled.")
         return
-
-    if choice.lower() == "all":
-        selected = repos
-    else:
-        try:
-            indices = [int(x.strip()) for x in choice.split(",")]
-            selected = [repos[i - 1] for i in indices if 1 <= i <= len(repos)]
-        except (ValueError, IndexError):
-            print(f"{_RED}\u2717 Invalid selection{_RESET}")
-            sys.exit(1)
-
     if not selected:
         print("No valid repos selected.")
         return
-
-    toolkit_dir = Path(__file__).resolve().parent
-    skill_names = [s.strip() for s in args.skills.split(",")] if args.skills else None
 
     for repo in selected:
         result = install_skills(toolkit_dir, repo, skill_names)
@@ -578,7 +750,9 @@ def cmd_scan(args) -> None:
             print(f"  {_RED}\u2717 {name} \u2014 conflict{_RESET}")
 
         if not result["conflicts"]:
-            ok = len(result["created"]) + len(result["replaced"]) + len(result["exists"])
+            ok = (
+                len(result["created"]) + len(result["replaced"]) + len(result["exists"])
+            )
             print(f"  {ok} skill(s) ready")
 
 
@@ -602,7 +776,9 @@ def main() -> None:
     p_uninstall = subparsers.add_parser(
         "uninstall", help="Uninstall skills from repositories"
     )
-    p_uninstall.add_argument("repos", nargs="*", type=Path, default=[], help="Repository paths")
+    p_uninstall.add_argument(
+        "repos", nargs="*", type=Path, default=[], help="Repository paths"
+    )
     p_uninstall.add_argument(
         "--scan",
         metavar="DIRECTORY",
@@ -625,9 +801,7 @@ def main() -> None:
     p_scan.add_argument(
         "--max-depth", type=int, default=5, help="Maximum scan depth (default: 5)"
     )
-    p_scan.add_argument(
-        "--skills", help="Comma-separated skill names (default: all)"
-    )
+    p_scan.add_argument("--skills", help="Comma-separated skill names (default: all)")
     p_scan.set_defaults(func=cmd_scan)
 
     args = parser.parse_args()

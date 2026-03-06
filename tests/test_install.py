@@ -17,6 +17,7 @@ from aau_toolkit import (
     ensure_symlink,
     install_skills,
     manage_gitignore,
+    parse_selection,
     remove_symlink,
     scan_for_repos,
     uninstall_skills,
@@ -613,3 +614,60 @@ def test_uninstall_scan_no_toolkit_repos(tmp_path):
 
     filtered = [r for r in repos if _has_toolkit_skills(TOOLKIT_DIR, r)]
     assert filtered == []  # none have toolkit skills
+
+
+# ── parse_selection tests ────────────────────────────────────────────────────
+
+
+def test_parse_selection_single_indices():
+    """Single comma-separated indices return sorted deduplicated list."""
+    assert parse_selection("1,3,5", 10) == [1, 3, 5]
+
+
+def test_parse_selection_range():
+    """Range syntax N-M expands to all integers from N to M inclusive."""
+    assert parse_selection("3-6", 10) == [3, 4, 5, 6]
+
+
+def test_parse_selection_mixed():
+    """Mix of single indices and ranges produces sorted deduplicated list."""
+    assert parse_selection("1,3-5,8", 10) == [1, 3, 4, 5, 8]
+
+
+def test_parse_selection_trailing_comma_discarded():
+    """Trailing comma produces empty token that is silently discarded."""
+    assert parse_selection("1,3-5,", 10) == [1, 3, 4, 5]
+
+
+def test_parse_selection_leading_and_double_comma_discarded():
+    """Leading comma and double comma produce empty tokens silently discarded."""
+    assert parse_selection(",1,,3", 10) == [1, 3]
+
+
+def test_parse_selection_overlapping_ranges_deduplicated():
+    """Overlapping ranges are deduplicated and sorted."""
+    assert parse_selection("1-5,3-7", 10) == [1, 2, 3, 4, 5, 6, 7]
+
+
+def test_parse_selection_reversed_range_raises():
+    """Reversed range (start > end) raises ValueError."""
+    with pytest.raises(ValueError, match="start must be"):
+        parse_selection("5-3", 10)
+
+
+def test_parse_selection_out_of_bounds_raises():
+    """Index beyond max_index raises ValueError."""
+    with pytest.raises(ValueError, match="out of range"):
+        parse_selection("99", 10)
+
+
+def test_parse_selection_zero_index_raises():
+    """Zero index (non-positive) raises ValueError."""
+    with pytest.raises(ValueError, match="out of range"):
+        parse_selection("0", 10)
+
+
+def test_parse_selection_non_numeric_raises():
+    """Non-numeric token raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid selection"):
+        parse_selection("abc", 10)

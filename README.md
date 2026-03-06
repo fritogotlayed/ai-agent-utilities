@@ -43,7 +43,7 @@ python3 aau_toolkit.py uninstall --scan ~/projects
 python3 aau_toolkit.py uninstall --scan ~/projects --max-depth 3
 ```
 
-This removes all symlinks and cleans up the managed `.gitignore` block. Use `--scan` to discover repositories with skills installed and choose which to uninstall.
+This removes all symlinks and cleans up the managed `.gitignore` block. Use `--scan` to discover repositories with skills installed. The same range-aware selection and optional TUI apply.
 
 ### Scan a directory for repositories
 
@@ -55,7 +55,33 @@ python3 aau_toolkit.py scan ~/projects
 python3 aau_toolkit.py scan ~/projects --max-depth 3
 ```
 
-The scan command finds git repositories under the given directory and prompts you to choose which ones to install into.
+The scan command finds git repositories under the given directory. Repositories are shown with relative paths and annotated with installed skill counts. Select by number, range, or name:
+
+```bash
+# Select by individual numbers
+1,3,5
+
+# Select using ranges
+1-5,8,12-15
+
+# Select all
+all
+
+# Cancel
+q
+```
+
+If `simple-term-menu` is installed (see [Interactive TUI](#interactive-tui)), an arrow-key selector with search is used instead.
+
+### Interactive TUI
+
+For a richer selection experience with arrow keys, spacebar toggle, and `/` to search, install the optional `interactive` extra:
+
+```bash
+pip install -e ".[interactive]"
+```
+
+When installed and running in a terminal, `scan` and `uninstall --scan` will automatically use the TUI selector. If not installed, the numbered list with range syntax is used as a fallback.
 
 ### List available skills
 
